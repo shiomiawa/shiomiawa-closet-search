@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Closet Search</title>
+  <!-- 文字：Noto Sans JP（Googleの無料フォント） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* =====================================================
+       デザイン：白ベース・太い文字・角ばった形・赤のアクセント
+       ===================================================== */
+
+    /* ===== 色の設定（ライト / ダーク） ===== */
+    :root {
+      --bg: #ffffff;
+      --panel: #f4f4f4;     /* 薄いグレーの面 */
+      --text: #1b1b1b;
+      --sub: #757575;
+      --line: #dadada;
+      --red: #e60012;       /* アクセントの赤 */
+      --ink: #1b1b1b;       /* メインボタンの色 */
+      --ink-text: #ffffff;
+    }
+    /* ダークモードは使わず、いつも白ベースで表示する
+       （戻したいときは @media (prefers-color-scheme: dark) { :root { ... } } を足す） */
+
+    /* ===== 全体 ===== */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+      line-height: 1.6;
+    }
+    a { color: inherit; }
+    .hidden { display: none !important; }
+
+    /* ===== ヘッダー（上に固定） ===== */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+    .site-header .inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      font-weight: 900;
+      font-size: 1.15rem;
+      letter-spacing: 0.06em;
+    }
+    .brand small {
+      font-weight: 400;
+      font-size: 0.75rem;
+      color: var(--sub);
+      margin-left: 6px;
+      letter-spacing: 0.15em;
+    }
+    .site-header nav { display: flex; gap: 20px; }
+    .site-header nav a {
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+    .site-header nav a:hover { color: var(--red); }
+
+    /* ===== メイン ===== */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px 64px;
+    }
+
+    /* ===== 大きな見出しエリア ===== */
+    .hero { padding: 48px 0 32px; border-bottom: 1px solid var(--line); }
+    .hero h1 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 900;
+      line-height: 1.35;
+      margin: 0 0 16px;
+      letter-spacing: 0.02em;
+    }
+    .hero .lead { font-weight: 700; margin: 0; color: var(--text); }
+
+    /* 赤い小さな英字ラベル */
+    .eyebrow {
+      color: var(--red);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      margin: 0 0 6px;
+    }
+
+    /* ===== 各セクション（角ばった平らな面） ===== */
+    .card {
+      padding: 32px 0;
+      border-bottom: 1px solid var(--line);
+      scroll-margin-top: 56px; /* 移動したときヘッダーに隠れないように */
+    }
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin: 0 0 20px;
+    }
+
+    /* ===== 入力フォーム ===== */
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--bg);
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    input:focus { outline: none; border-color: var(--text); }
+    .row { display: flex; gap: 16px; }
+    .row > div { flex: 1; }
+    @media (max-width: 560px) {
+      .row { flex-direction: column; gap: 0; } /* スマホでは縦並び */
+    }
+
+    /* ===== ボタン ===== */
+    .buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+    button {
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 0.05em;
+      border-radius: 0;
+      border: 1px solid var(--ink);
+      cursor: pointer;
+    }
+    .btn-main { background: var(--ink); color: var(--ink-text); }
+    .btn-main:hover { opacity: 0.85; }
+    .btn-sub { background: var(--bg); color: var(--text); }
+    .btn-sub:hover { background: var(--panel); }
+    .error { color: var(--red); font-size: 0.85rem; font-weight: 700; min-height: 1.2em; margin: 8px 0 0; }
+
+    /* ===== キーワード（折りたたみ） ===== */
+    .keywords {
+      margin-bottom: 16px;
+      background: var(--panel);
+      padding: 12px 16px;
+    }
+    .keywords summary {
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .keywords .chips { margin: 12px 0; }
+    .keywords input { margin-bottom: 0; }
+    #chipsSummary { color: var(--red); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .chip:hover { border-color: var(--text); }
+    .chip.on { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+
+    /* ===== 写真 ===== */
+    .photo-area { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .photo-preview {
+      width: 96px;
+      height: 128px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+    }
+    .photo-buttons { display: flex; flex-direction: column; gap: 8px; }
+    .photo-buttons button { padding: 8px 16px; font-size: 0.85rem; }
+
+    /* ===== 画像検索の結果（商品一覧のようなグリッド） ===== */
+    .status { color: var(--sub); font-size: 0.85rem; margin: -8px 0 16px; }
+    .images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 24px 12px;
+    }
+    .images a { display: block; text-decoration: none; font-size: 0.75rem; color: var(--sub); }
+    .images img {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      background: var(--panel);
+      display: block;
+      margin-bottom: 6px;
+      transition: opacity 0.2s;
+    }
+    .images a:hover img { opacity: 0.8; }
+    .images .src { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ===== 検索リンク ===== */
+    .query { font-size: 0.85rem; color: var(--sub); margin: -8px 0 16px; }
+    .links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--line); /* すき間の線をグレーに見せる */
+      border: 1px solid var(--line);
+    }
+    .links a {
+      display: block;
+      padding: 16px;
+      background: var(--bg);
+      text-decoration: none;
+    }
+    .links a:hover { background: var(--panel); }
+    .links .site { font-weight: 900; }
+    .links a:hover .site { color: var(--red); }
+    .links .desc { font-size: 0.75rem; color: var(--sub); }
+
+    /* ===== マイクローゼット ===== */
+    .closet-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .closet-item:last-child { border-bottom: none; }
+    .closet-item .info { flex: 1; min-width: 0; }
+    .closet-item .num { font-weight: 900; letter-spacing: 0.05em; }
+    .closet-item .meta { font-size: 0.85rem; color: var(--sub); }
+    .closet-item button { padding: 8px 14px; font-size: 0.8rem; }
+    .thumb {
+      width: 60px;
+      height: 80px;
+      flex-shrink: 0;
+      object-fit: cover;
+      background: var(--panel);
+    }
+    .thumb-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: var(--sub);
+    }
+    .empty { color: var(--sub); font-size: 0.9rem; }
+    .closet-item .btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+    /* ===== タグからまとめて登録 ===== */
+    .note { font-size: 0.9rem; margin: 0 0 16px; }
+    /* 写真をドラッグして上に乗せているとき */
+    #tags.dragging { outline: 3px dashed var(--red); outline-offset: 8px; background: var(--panel); }
+    .tag-list { margin: 24px 0 8px; border-top: 1px solid var(--line); }
+    .tag-row {
+      display: flex;
+      gap: 20px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .tag-row > img {
+      width: 180px;
+      height: 240px;
+      flex-shrink: 0;
+      object-fit: cover;
+      background: var(--panel);
+      cursor: zoom-in; /* 虫めがねのカーソル */
+    }
+    .tag-row .fields { flex: 1; min-width: 0; }
+    .tag-status { font-size: 0.9rem; font-weight: 700; margin: 0 0 12px; }
+    .tag-status.ng { color: var(--red); }
+    .num-input { font-size: 1.8rem; font-weight: 900; letter-spacing: 0.2em; } /* 老眼でも読みやすい大きさ */
+    .candidates { display: flex; gap: 8px; flex-wrap: wrap; margin: -8px 0 16px; }
+    .candidates .chip { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.1em; }
+    .tag-row .remove { padding: 8px 14px; font-size: 0.8rem; }
+    @media (max-width: 560px) {
+      .tag-row { flex-direction: column; }
+      .tag-row > img { width: 100%; height: 280px; }
+    }
+
+    /* ===== 写真の拡大表示 ===== */
+    .zoom {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      cursor: zoom-out;
+    }
+    .zoom img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    /* 囲んで読み取るモード */
+    .zoom.selectable { cursor: default; }
+    .zoom.selectable img { cursor: crosshair; touch-action: none; user-select: none; }
+    .zoom-box {
+      position: fixed;
+      border: 3px solid var(--red);
+      background: rgba(230, 0, 18, 0.15);
+      pointer-events: none;
+    }
+    .zoom-hint {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      margin: 0;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-align: center;
+    }
+    .tag-row .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .zoom-close {
+      cursor: pointer;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+</style>
+</head>
+<body>
+  <!-- ヘッダー（スクロールしても上に残る） -->
+  <header class="site-header">
+    <div class="inner">
+      <span class="brand">MY CLOSET<small>SEARCH</small></span>
+      <nav>
+        <a href="#search">探す</a>
+        <a href="#tags">タグ登録</a>
+        <a href="#closet">クローゼット</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- 大きな見出し -->
+    <section class="hero">
+      <p class="eyebrow">SEARCH BY ITEM NUMBER</p>
+      <h1>あの一着の着回しを、<br>もう一度。</h1>
+      <p class="lead">販売が終わった服も、商品番号からコーデを探せます。</p>
+    </section>
+
+    <!-- 入力エリア -->
+    <section id="search" class="card">
+      <p class="eyebrow">SEARCH</p>
+      <h2>商品を探す</h2>
+      <label for="itemNumber">商品番号（6桁）</label>
+      <input id="itemNumber" type="text" inputmode="numeric" maxlength="6" placeholder="例：455361">
+      <div class="row">
+        <div>
+          <label for="itemName">商品名（任意）</label>
+          <input id="itemName" type="text" placeholder="例：スフレヤーンクルーネックセーター">
+        </div>
+        <div>
+          <label for="itemColor">色（任意）</label>
+          <input id="itemColor" type="text" placeholder="例：ネイビー">
+        </div>
+      </div>
+      <!-- details = 押すと開く・閉じる箱（最初は閉じている） -->
+      <details class="keywords">
+        <summary>キーワードを追加 <span id="chipsSummary"></span></summary>
+        <div id="chips" class="chips"></div>
+        <input id="freeKeyword" type="text" placeholder="自由に入力（例：オフィス 春 スカート）">
+      </details>
+      <label>自分の写真（任意）</label>
+      <div class="photo-area">
+        <img id="photoPreview" class="photo-preview hidden" alt="登録する写真">
+        <div class="photo-buttons">
+          <!-- 本物のファイル選択欄は隠して、ボタンから呼び出す -->
+          <input id="photoInput" type="file" accept="image/*" class="hidden">
+          <button id="photoSelectBtn" class="btn-sub" type="button">写真を選ぶ</button>
+          <button id="photoClearBtn" class="btn-sub hidden" type="button">写真を外す</button>
+        </div>
+      </div>
+      <div class="buttons">
+        <button id="searchBtn" class="btn-main">コーデを探す</button>
+        <button id="saveBtn" class="btn-sub">クローゼットに保存</button>
+      </div>
+      <p id="errorMsg" class="error"></p>
+    </section>
+
+    <!-- 画像検索の結果（最初は隠しておく） -->
+    <section id="imageCard" class="card hidden">
+      <p class="eyebrow">IMAGES</p>
+      <h2>画像検索の結果</h2>
+      <p id="imageStatus" class="status"></p>
+      <div id="images" class="images"></div>
+    </section>
+
+    <!-- 検索結果エリア（最初は隠しておく） -->
+    <section id="resultCard" class="card hidden">
+      <p class="eyebrow">LINKS</p>
+      <h2>検索リンク</h2>
+      <p id="queryText" class="query"></p>
+      <div id="links" class="links"></div>
+    </section>
+
+    <!-- タグの写真からまとめて登録 -->
+    <section id="tags" class="card">
+      <p class="eyebrow">TAG SCAN</p>
+      <h2>タグの写真からまとめて登録</h2>
+      <p class="note">
+        スマホで撮った服のタグの写真をPCに送り、まとめて選ぶか、この欄にドラッグ＆ドロップしてください。商品番号（6桁）を自動で読み取ります。<br>
+        読み取った番号は、写真を見ながら確認・修正できます（写真を押すと拡大）。
+      </p>
+      <input id="tagInput" type="file" accept="image/*" multiple class="hidden">
+      <div class="buttons">
+        <button id="tagSelectBtn" class="btn-main" type="button">タグの写真を選ぶ（複数OK）</button>
+      </div>
+      <p id="tagStatus" class="tag-status"></p>
+      <div id="tagList" class="tag-list hidden"></div>
+      <div id="tagActions" class="buttons hidden">
+        <button id="tagSaveBtn" class="btn-main" type="button">まとめてクローゼットに保存</button>
+        <button id="tagClearBtn" class="btn-sub" type="button">すべて取り消す</button>
+      </div>
+    </section>
+
+    <!-- マイクローゼット -->
+    <section id="closet" class="card">
+      <p class="eyebrow">MY CLOSET</p>
+      <h2>マイクローゼット</h2>
+      <div id="closetList"></div>
+    </section>
+  </main>
+
+  <script>
+    // ===== 定数 =====
+    const STORAGE_KEY = "myClosetItems"; // localStorage に保存するときの名前
+
+    // 検索先サイトの一覧
+    // build に「検索ワード」と「商品番号」を渡すと、そのサイトの検索URLを返す
+    const SEARCH_SITES = [
+      {
+        name: "Google画像検索",
+        desc: "コーデ画像をまとめて見る",
+        build: (q) => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q + " コーデ")}`,
+      },
+      {
+        name: "WEAR",
+        desc: "ZOZOのコーデ投稿（Google経由で検索）",
+        build: (q) => `https://www.google.com/search?q=${encodeURIComponent("site:wear.jp " + q)}`,
+      },
+      {
+        name: "StyleHint",
+        desc: "ユニクロ公式の着用コーデ（Google経由で検索）",
+        build: (q) => `https://www.google.com/search?q=${encodeURIComponent("site:stylehint.com " + q)}`,
+      },
+      {
+        name: "Instagram",
+        desc: "投稿の画像を探す（Google画像検索）",
+        // tbm=isch を付けると Google の「画像」タブで開く
+        build: (q) => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent("site:instagram.com " + q)}`,
+      },
+      {
+        name: "Pinterest",
+        desc: "コーデ画像のピン",
+        build: (q) => `https://www.pinterest.jp/search/pins/?q=${encodeURIComponent(q + " コーデ")}`,
+      },
+      {
+        name: "メルカリ",
+        desc: "商品写真・正式名称の確認に",
+        build: (q) => `https://jp.mercari.com/search?keyword=${encodeURIComponent(q)}`,
+      },
+      {
+        name: "ラクマ",
+        desc: "商品写真・正式名称の確認に",
+        build: (q) => `https://fril.jp/s?query=${encodeURIComponent(q)}`,
+      },
+    ];
+
+    // キーワードボタンの一覧
+    // single: true のグループは「どちらか1つだけ」選べる
+    const KEYWORD_GROUPS = [
+      { words: ["ぽっちゃり", "痩せ"], single: true },
+      { words: ["高身長", "低身長"], single: true },
+      { words: ["40代"], single: false },
+      { words: ["きれいめ"], single: false },
+      { words: ["女性", "男性"], single: true },
+    ];
+
+    // いま選ばれているキーワード
+    const selectedKeywords = new Set();
+
+    // ===== 画面の部品を取得 =====
+    const itemNumberInput = document.getElementById("itemNumber");
+    const itemNameInput = document.getElementById("itemName");
+    const itemColorInput = document.getElementById("itemColor");
+    const freeKeywordInput = document.getElementById("freeKeyword");
+    const errorMsg = document.getElementById("errorMsg");
+    const resultCard = document.getElementById("resultCard");
+    const queryText = document.getElementById("queryText");
+    const linksArea = document.getElementById("links");
+    const closetList = document.getElementById("closetList");
+    const imageCard = document.getElementById("imageCard");
+    const imageStatus = document.getElementById("imageStatus");
+    const imagesArea = document.getElementById("images");
+    const photoInput = document.getElementById("photoInput");
+    const photoPreview = document.getElementById("photoPreview");
+    const photoClearBtn = document.getElementById("photoClearBtn");
+
+    // いまフォームで選んでいる写真（縮小済みの画像データ）。なければ ""
+    let currentPhoto = "";
+
+    // ===== 写真を小さくする =====
+    // 長いほうの辺を maxSize ピクセルにそろえ、JPEG の文字データにして返す
+    // （スマホの写真は数MBあるので、そのままだとすぐ保存容量があふれる）
+    function resizeImage(file, maxSize = 400) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.8)); // 画質 80%
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ===== フォームの写真表示を切り替える =====
+    function setPhoto(dataUrl) {
+      currentPhoto = dataUrl || "";
+      if (currentPhoto) {
+        photoPreview.src = currentPhoto;
+        photoPreview.classList.remove("hidden");
+        photoClearBtn.classList.remove("hidden");
+      } else {
+        photoPreview.removeAttribute("src");
+        photoPreview.classList.add("hidden");
+        photoClearBtn.classList.add("hidden");
+      }
+    }
+
+    // ===== 写真を拡大表示する =====
+    // onSelectArea を渡すと「囲んで読み取る」モードになり、
+    // 囲んだ範囲を {x, y, w, h}（写真全体を1としたときの割合）で返す
+    function showZoom(src, onSelectArea) {
+      if (!src) return;
+      const zoom = document.createElement("div");
+      zoom.className = "zoom";
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = "拡大した写真";
+      img.draggable = false;
+      const close = document.createElement("span");
+      close.className = "zoom-close";
+      close.textContent = "閉じる ✕";
+      zoom.append(img, close);
+      document.body.appendChild(zoom);
+
+      // ふつうの拡大：どこかを押すと閉じる
+      if (!onSelectArea) {
+        zoom.addEventListener("click", () => zoom.remove());
+        return;
+      }
+
+      // 囲んで読み取るモード
+      zoom.classList.add("selectable");
+      const hint = document.createElement("p");
+      hint.className = "zoom-hint";
+      hint.textContent = "番号の部分を、指やマウスでなぞって四角く囲んでください（例：211-472014）";
+      const box = document.createElement("div");
+      box.className = "zoom-box hidden";
+      zoom.append(hint, box);
+      close.addEventListener("click", () => zoom.remove());
+
+      let start = null;
+      const drawBox = (a, b) => {
+        box.style.left = Math.min(a.x, b.x) + "px";
+        box.style.top = Math.min(a.y, b.y) + "px";
+        box.style.width = Math.abs(a.x - b.x) + "px";
+        box.style.height = Math.abs(a.y - b.y) + "px";
+      };
+
+      img.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        start = { x: e.clientX, y: e.clientY };
+        img.setPointerCapture(e.pointerId);
+        drawBox(start, start);
+        box.classList.remove("hidden");
+      });
+      img.addEventListener("pointermove", (e) => {
+        if (start) drawBox(start, { x: e.clientX, y: e.clientY });
+      });
+      img.addEventListener("pointerup", (e) => {
+        if (!start) return;
+        const r = img.getBoundingClientRect();
+        // 写真の外にはみ出した分は切り捨てる
+        const x1 = Math.max(Math.min(start.x, e.clientX), r.left);
+        const x2 = Math.min(Math.max(start.x, e.clientX), r.right);
+        const y1 = Math.max(Math.min(start.y, e.clientY), r.top);
+        const y2 = Math.min(Math.max(start.y, e.clientY), r.bottom);
+        start = null;
+        if (x2 - x1 < 10 || y2 - y1 < 10) { // 小さすぎる＝ただのクリック
+          box.classList.add("hidden");
+          return;
+        }
+        zoom.remove();
+        onSelectArea({
+          x: (x1 - r.left) / r.width,
+          y: (y1 - r.top) / r.height,
+          w: (x2 - x1) / r.width,
+          h: (y2 - y1) / r.height,
+        });
+      });
+    }
+    // Esc キーでも閉じる
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") document.querySelectorAll(".zoom").forEach((z) => z.remove());
+    });
+
+    // ===== タグ写真の保存場所（IndexedDB） =====
+    // localStorage は約5MBしか入らないので、大きめのタグ写真は
+    // 容量の大きい IndexedDB に「商品番号 → 写真」の形で保存する
+    const DB_NAME = "myClosetDB";
+    const TAG_STORE = "tagPhotos";
+
+    function openDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(TAG_STORE); // 初回だけ箱を作る
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // 使い方：tagStore("readwrite", (s) => s.put(写真, 番号))
+    //         tagStore("readonly",  (s) => s.get(番号))
+    //         tagStore("readwrite", (s) => s.delete(番号))
+    async function tagStore(mode, action) {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(TAG_STORE, mode);
+        const req = action(tx.objectStore(TAG_STORE));
+        tx.oncomplete = () => resolve(req.result);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // ===== 文字の読み取り（OCR） =====
+    // Tesseract.js という無料のライブラリを、初めて使うときだけ読み込む
+    let ocrWorker = null;
+
+    async function getOcrWorker() {
+      if (ocrWorker) return ocrWorker;
+      if (!window.Tesseract) {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("読み取り機能を読み込めませんでした（ネット接続を確認してください）"));
+          document.head.appendChild(s);
+        });
+      }
+      ocrWorker = await Tesseract.createWorker("eng"); // 数字が読めればいいので英語用で十分
+      return ocrWorker;
+    }
+
+    // 選んだ写真ファイルを「縮めずに」画像として読み込む（小さい文字を読むため）
+    function loadFileImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      });
+    }
+
+    // 読み取り用の画像を作る
+    //  - 範囲（sx, sy, sw, sh）を切り出し、長いほうの辺を target ピクセルに拡大・縮小
+    //  - 白黒・くっきりにする。invert: true なら白黒を反転（黒地に白い文字のタグ用）
+    function makeOcrCanvas(img, { sx = 0, sy = 0, sw = img.width, sh = img.height, target = 3000, invert = false } = {}) {
+      const scale = Math.min(4, target / Math.max(sw, sh)); // 拡大は最大4倍まで
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(sw * scale);
+      canvas.height = Math.round(sh * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.filter = "grayscale(1) contrast(1.8)" + (invert ? " invert(1)" : "");
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      return canvas;
+    }
+
+    // 画像から文字を読む。digitsOnly: true なら数字と「-」「()」だけを読む
+    async function recognize(canvas, digitsOnly = false) {
+      const worker = await getOcrWorker();
+      await worker.setParameters({
+        tessedit_char_whitelist: digitsOnly ? "0123456789-()" : "",
+        tessedit_pageseg_mode: digitsOnly ? "6" : "3", // 6 = 文字のかたまり、3 = 自動
+      });
+      const { data } = await worker.recognize(canvas);
+      return data.text;
+    }
+
+    // 写真全体から自動で番号を探す（ふつう → 白黒反転 の順に試す）
+    async function autoRead(file) {
+      const img = await loadFileImage(file);
+      for (const invert of [false, true]) {
+        const numbers = findItemNumbers(await recognize(makeOcrCanvas(img, { invert })));
+        if (numbers.length) return numbers;
+      }
+      return [];
+    }
+
+    // 囲んだ範囲だけを大きくして読む
+    async function readArea(file, area) {
+      const img = await loadFileImage(file);
+      const box = {
+        sx: area.x * img.width,
+        sy: area.y * img.height,
+        sw: area.w * img.width,
+        sh: area.h * img.height,
+        target: 1600,
+      };
+      for (const invert of [false, true]) {
+        const numbers = findItemNumbers(await recognize(makeOcrCanvas(img, { ...box, invert }), true));
+        if (numbers.length) return numbers;
+      }
+      return [];
+    }
+
+    // 読み取った文字から商品番号の候補を探す
+    //  ① 「211-472014」のような「3桁-6桁」の形（ユニクロのタグの書き方）を最優先
+    //  ② それ以外の6桁の数字
+    function findItemNumbers(text) {
+      // 数字の多いかたまりの中だけ、読み間違えやすい文字を数字に直す（O→0、l→1 など）
+      const fixMap = { O: "0", o: "0", D: "0", Q: "0", l: "1", I: "1", "|": "1", i: "1", S: "5", s: "5", B: "8", Z: "2", z: "2" };
+      const fixed = text.replace(/\S+/g, (word) =>
+        (word.match(/\d/g) || []).length >= 3 ? word.replace(/[OoDQlI|iSsBZz]/g, (c) => fixMap[c]) : word
+      );
+
+      const found = [];
+      const texts = [fixed, fixed.replace(/(\d)[ \t]+(?=\d)/g, "$1")]; // そのまま＋数字の間の空白を詰めたもの
+      texts.forEach((t) => {
+        for (const m of t.matchAll(/(?<!\d)\d{3}\s*[-‐－ー−–—~]\s*(\d{6})(?!\d)/g)) found.push(m[1]);
+      });
+      // 「-」が読み落とされて「211472014」の9桁になったときは、後ろの6桁
+      texts.forEach((t) => {
+        for (const m of t.matchAll(/(?<!\d)\d{3}(\d{6})(?!\d)/g)) found.push(m[1]);
+      });
+      texts.forEach((t) => {
+        for (const m of t.matchAll(/(?<!\d)\d{6}(?!\d)/g)) found.push(m[0]);
+      });
+      return [...new Set(found)]; // 重複を消す（順番は優先度順のまま）
+    }
+
+    // ===== 入力チェック =====
+    // 6桁の数字ならその番号を返す。だめなら null を返してエラー表示
+    function getValidNumber() {
+      const number = itemNumberInput.value.trim();
+      if (!/^\d{6}$/.test(number)) {
+        errorMsg.textContent = "商品番号は6桁の数字で入力してください。";
+        return null;
+      }
+      errorMsg.textContent = "";
+      return number;
+    }
+
+    // ===== キーワードボタンを作る =====
+    function renderChips() {
+      const chipsArea = document.getElementById("chips");
+      chipsArea.innerHTML = "";
+
+      KEYWORD_GROUPS.forEach((group) => {
+        group.words.forEach((word) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "chip" + (selectedKeywords.has(word) ? " on" : "");
+          chip.textContent = word;
+
+          chip.addEventListener("click", () => {
+            if (selectedKeywords.has(word)) {
+              selectedKeywords.delete(word); // もう一度押したら解除
+            } else {
+              // 「どちらか1つ」のグループなら、同じグループの他の言葉を外す
+              if (group.single) group.words.forEach((w) => selectedKeywords.delete(w));
+              selectedKeywords.add(word);
+            }
+            renderChips(); // 見た目を更新
+          });
+
+          chipsArea.appendChild(chip);
+        });
+      });
+
+      updateKeywordSummary();
+    }
+
+    // ===== 選んでいるキーワード（ボタン＋自由入力）をまとめて返す =====
+    function getKeywords() {
+      const free = freeKeywordInput.value.trim();
+      return [...selectedKeywords, free].filter((word) => word);
+    }
+
+    // 閉じていても分かるよう、選んでいる言葉を見出しに表示
+    function updateKeywordSummary() {
+      const chosen = getKeywords();
+      document.getElementById("chipsSummary").textContent =
+        chosen.length ? `（${chosen.join("・")}）` : "";
+    }
+
+    // ===== 検索ワードを作る =====
+    // 例：「ユニクロ 455361 スフレヤーン ネイビー ぽっちゃり 40代」
+    function buildQuery(number, name, color) {
+      return ["ユニクロ", number, name, color, ...getKeywords()].filter((word) => word).join(" ");
+    }
+
+    // ===== 検索リンクを表示する =====
+    function showLinks(number, name, color) {
+      const query = buildQuery(number, name, color);
+      queryText.textContent = `検索ワード：${query}`;
+      linksArea.innerHTML = "";
+
+      SEARCH_SITES.forEach((site) => {
+        const a = document.createElement("a");
+        a.href = site.build(query);
+        a.target = "_blank";          // 新しいタブで開く
+        a.rel = "noopener noreferrer"; // 安全のためのおまじない
+
+        const title = document.createElement("div");
+        title.className = "site";
+        title.textContent = site.name;
+
+        const desc = document.createElement("div");
+        desc.className = "desc";
+        desc.textContent = site.desc;
+
+        a.append(title, desc);
+        linksArea.appendChild(a);
+      });
+
+      resultCard.classList.remove("hidden");
+      showImages(query + " コーデ");
+    }
+
+    // ===== 画像検索の結果を表示する =====
+    // server.js の /api/images に検索ワードを送り、返ってきた画像を並べる
+    async function showImages(query) {
+      imageCard.classList.remove("hidden");
+      imagesArea.innerHTML = "";
+
+      // index.html を直接開いているとき（file://）はサーバーがないので使えない
+      if (location.protocol === "file:") {
+        imageStatus.textContent = "画像を表示するには、ターミナルで node server.js を起動し、http://localhost:3000 を開いてください。";
+        return;
+      }
+
+      imageStatus.textContent = "画像を検索中…";
+      try {
+        const res = await fetch(`/api/images?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        if (data.images.length === 0) {
+          imageStatus.textContent = "画像が見つかりませんでした。商品名や色を入れると見つかりやすくなります。";
+          return;
+        }
+        imageStatus.textContent = `${data.images.length}件（画像を押すと元のページが開きます）`;
+
+        data.images.forEach((image) => {
+          const a = document.createElement("a");
+          a.href = image.pageUrl;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.title = image.title;
+
+          const img = document.createElement("img");
+          img.src = image.thumbnail;
+          img.alt = image.title;
+          img.loading = "lazy"; // 見える位置に来てから読み込む
+
+          const src = document.createElement("span");
+          src.className = "src";
+          src.textContent = image.source;
+
+          a.append(img, src);
+          imagesArea.appendChild(a);
+        });
+      } catch (e) {
+        imageStatus.textContent = e.message || "画像検索に失敗しました。サーバーが起動しているか確認してください。";
+      }
+    }
+
+    // ===== 保存データの読み書き =====
+    function loadCloset() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (e) {
+        return []; // 読めなかったら空っぽ扱い
+      }
+    }
+
+    // 保存できたら true、できなかったら false を返す
+    function saveCloset(items) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        return true;
+      } catch (e) {
+        errorMsg.textContent = "保存できませんでした。写真が多すぎて容量がいっぱいかもしれません（使わない服を削除してください）。";
+        return false;
+      }
+    }
+
+    // ===== マイクローゼットを表示する =====
+    function renderCloset() {
+      const items = loadCloset();
+      closetList.innerHTML = "";
+
+      if (items.length === 0) {
+        closetList.innerHTML = '<p class="empty">まだ保存された服はありません。</p>';
+        return;
+      }
+
+      items.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "closet-item";
+
+        // サムネイル（服の写真 → なければタグ写真 → なければ「写真なし」の枠）
+        let thumb;
+        if (item.photo) {
+          thumb = document.createElement("img");
+          thumb.src = item.photo;
+          thumb.alt = item.name || item.number;
+          thumb.className = "thumb";
+        } else if (item.hasTag) {
+          thumb = document.createElement("img");
+          thumb.alt = "タグ " + item.number;
+          thumb.className = "thumb";
+          // タグ写真は IndexedDB から読み込んであとで表示
+          tagStore("readonly", (s) => s.get(item.number))
+            .then((src) => { if (src) thumb.src = src; })
+            .catch(() => {});
+        } else {
+          thumb = document.createElement("div");
+          thumb.className = "thumb thumb-empty";
+          thumb.textContent = "写真なし";
+        }
+
+        const info = document.createElement("div");
+        info.className = "info";
+        const num = document.createElement("div");
+        num.className = "num";
+        num.textContent = item.number;
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = [item.name, item.color].filter((v) => v).join(" / ") || "（名前なし）";
+        info.append(num, meta);
+
+        // 「探す」ボタン：保存した内容をフォームに戻して検索
+        const searchBtn = document.createElement("button");
+        searchBtn.className = "btn-main";
+        searchBtn.textContent = "探す";
+        searchBtn.addEventListener("click", () => {
+          itemNumberInput.value = item.number;
+          itemNameInput.value = item.name;
+          itemColorInput.value = item.color;
+          setPhoto(item.photo);
+          showLinks(item.number, item.name, item.color);
+          imageCard.scrollIntoView({ behavior: "smooth" });
+        });
+
+        // 「削除」ボタン
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-sub";
+        deleteBtn.textContent = "削除";
+        deleteBtn.addEventListener("click", () => {
+          const rest = loadCloset().filter((i) => i.number !== item.number);
+          saveCloset(rest);
+          tagStore("readwrite", (s) => s.delete(item.number)).catch(() => {}); // タグ写真も消す
+          renderCloset();
+        });
+
+        const btns = document.createElement("div");
+        btns.className = "btns";
+        btns.append(searchBtn);
+
+        // 「タグ」ボタン：保存したタグ写真を拡大して見る
+        if (item.hasTag) {
+          const tagBtn = document.createElement("button");
+          tagBtn.className = "btn-sub";
+          tagBtn.textContent = "タグ";
+          tagBtn.addEventListener("click", async () => {
+            showZoom(await tagStore("readonly", (s) => s.get(item.number)).catch(() => null));
+          });
+          btns.append(tagBtn);
+        }
+        btns.append(deleteBtn);
+
+        row.append(thumb, info, btns);
+        closetList.appendChild(row);
+      });
+    }
+
+    // ===== ボタンの動き =====
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      const number = getValidNumber();
+      if (!number) return;
+      showLinks(number, itemNameInput.value.trim(), itemColorInput.value.trim());
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      const number = getValidNumber();
+      if (!number) return;
+
+      const newItem = {
+        number: number,
+        name: itemNameInput.value.trim(),
+        color: itemColorInput.value.trim(),
+        photo: currentPhoto,
+      };
+
+      // すでにタグ写真がある服なら、その印を引き継ぐ
+      const old = loadCloset().find((i) => i.number === number);
+      newItem.hasTag = old ? !!old.hasTag : false;
+
+      // 同じ番号があれば上書き、なければ先頭に追加
+      const items = loadCloset().filter((i) => i.number !== number);
+      items.unshift(newItem);
+      if (saveCloset(items)) {
+        errorMsg.textContent = "";
+        renderCloset();
+      }
+    });
+
+    // 「写真を選ぶ」→ 隠してあるファイル選択欄を開く
+    document.getElementById("photoSelectBtn").addEventListener("click", () => {
+      photoInput.click();
+    });
+
+    // 写真が選ばれたら縮小してプレビュー
+    photoInput.addEventListener("change", async () => {
+      const file = photoInput.files[0];
+      if (!file) return;
+      try {
+        setPhoto(await resizeImage(file));
+        errorMsg.textContent = "";
+      } catch (e) {
+        errorMsg.textContent = "この画像は読み込めませんでした。JPEGかPNGの写真を選んでください。";
+      }
+      photoInput.value = ""; // 同じ写真をもう一度選んでも反応するようにリセット
+    });
+
+    // 「写真を外す」
+    photoClearBtn.addEventListener("click", () => setPhoto(""));
+
+    // Enterキーでも検索できるようにする
+    // 自由入力を打つたびに見出しの表示を更新
+    freeKeywordInput.addEventListener("input", updateKeywordSummary);
+
+    [itemNumberInput, itemNameInput, itemColorInput, freeKeywordInput].forEach((input) => {
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("searchBtn").click();
+      });
+    });
+
+    // =====================================================
+    // タグの写真からまとめて登録
+    // =====================================================
+    const tagInput = document.getElementById("tagInput");
+    const tagStatus = document.getElementById("tagStatus");
+    const tagList = document.getElementById("tagList");
+    const tagActions = document.getElementById("tagActions");
+
+    const pendingTags = []; // 確認待ちのタグ（1枚ごとに画面の部品をまとめて持つ）
+
+    // ラベル付きの入力欄を作る小さな関数
+    function makeField(labelText, input) {
+      const wrap = document.createElement("div");
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      wrap.append(label, input);
+      return wrap;
+    }
+
+    function makeInput(placeholder) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = placeholder;
+      return input;
+    }
+
+    // 一覧の表示・非表示を切り替える
+    function updateTagActions() {
+      const has = pendingTags.length > 0;
+      tagList.classList.toggle("hidden", !has);
+      tagActions.classList.toggle("hidden", !has);
+    }
+
+    // 確認待ちの一覧から1件消す
+    function removeTagEntry(entry) {
+      const index = pendingTags.indexOf(entry);
+      if (index >= 0) pendingTags.splice(index, 1);
+      entry.row.remove();
+      updateTagActions();
+    }
+
+    // タグ写真1枚ぶんの行を作る
+    // photo = 表示・保存用の縮小写真、file = 読み取り用の元の写真
+    function createTagRow(photo, file) {
+      const entry = { photo, file };
+
+      const row = document.createElement("div");
+      row.className = "tag-row";
+
+      // 写真を押す → 拡大して「番号を囲んで読み取る」
+      const startAreaSelect = () => {
+        showZoom(photo, async (area) => {
+          entry.status.classList.remove("ng");
+          entry.status.textContent = "囲んだ部分を読み取り中…";
+          try {
+            const numbers = await readArea(file, area);
+            showCandidates(entry, numbers);
+            if (!numbers.length) {
+              entry.status.textContent = "読み取れませんでした。番号だけをもう少し大きめに囲むか、手で入力してください。";
+            }
+          } catch (e) {
+            entry.status.textContent = `読み取りに失敗しました（${e.message}）。手で入力してください。`;
+            entry.status.classList.add("ng");
+          }
+        });
+      };
+
+      const img = document.createElement("img");
+      img.src = photo;
+      img.alt = "タグの写真";
+      img.title = "押すと拡大して、番号を囲んで読み取れます";
+      img.addEventListener("click", startAreaSelect);
+
+      const fields = document.createElement("div");
+      fields.className = "fields";
+
+      const status = document.createElement("p");
+      status.className = "tag-status";
+      status.textContent = "読み取り待ち…";
+
+      const numInput = makeInput("6桁の数字");
+      numInput.inputMode = "numeric";
+      numInput.maxLength = 6;
+      numInput.className = "num-input";
+
+      const candidates = document.createElement("div");
+      candidates.className = "candidates";
+
+      const nameInput = makeInput("例：スフレヤーンクルーネックセーター");
+      const colorInput = makeInput("例：ネイビー");
+      const nameColorRow = document.createElement("div");
+      nameColorRow.className = "row";
+      nameColorRow.append(makeField("商品名（任意）", nameInput), makeField("色（任意）", colorInput));
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn-sub remove";
+      removeBtn.textContent = "この写真を外す";
+      removeBtn.addEventListener("click", () => removeTagEntry(entry));
+
+      const areaBtn = document.createElement("button");
+      areaBtn.type = "button";
+      areaBtn.className = "btn-sub remove";
+      areaBtn.textContent = "番号を囲んで読み取る";
+      areaBtn.addEventListener("click", startAreaSelect);
+
+      const rowBtns = document.createElement("div");
+      rowBtns.className = "row-btns";
+      rowBtns.append(areaBtn, removeBtn);
+
+      fields.append(status, makeField("商品番号（6桁）", numInput), candidates, nameColorRow, rowBtns);
+      row.append(img, fields);
+      tagList.appendChild(row);
+
+      Object.assign(entry, { row, status, numInput, candidates, nameInput, colorInput });
+      pendingTags.push(entry);
+      return entry;
+    }
+
+    // 読み取り結果を行に表示する
+    function showCandidates(entry, numbers) {
+      entry.candidates.innerHTML = "";
+
+      if (numbers.length === 0) {
+        entry.status.textContent = "番号を読み取れませんでした。「番号を囲んで読み取る」を押して、番号の部分を囲んでください。";
+        entry.status.classList.add("ng");
+        return;
+      }
+
+      entry.numInput.value = numbers[0];
+      entry.status.classList.remove("ng");
+      entry.status.textContent = numbers.length === 1
+        ? "読み取りました。写真と見比べて確認してください。"
+        : "候補が複数あります。正しい番号を押してください。";
+
+      // すでにクローゼットにある番号なら教える
+      if (loadCloset().some((i) => i.number === numbers[0])) {
+        entry.status.textContent += "（登録済みの服です。保存するとタグ写真が追加されます）";
+      }
+
+      // 候補が2つ以上なら、押して選べるボタンにする
+      if (numbers.length > 1) {
+        numbers.forEach((n) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "chip" + (n === entry.numInput.value ? " on" : "");
+          chip.textContent = n;
+          chip.addEventListener("click", () => {
+            entry.numInput.value = n;
+            entry.candidates.querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", c === chip));
+          });
+          entry.candidates.appendChild(chip);
+        });
+      }
+    }
+
+    // 「タグの写真を選ぶ」
+    document.getElementById("tagSelectBtn").addEventListener("click", () => tagInput.click());
+
+    // ボタンから写真が選ばれたとき
+    tagInput.addEventListener("change", () => {
+      const files = [...tagInput.files];
+      tagInput.value = ""; // 同じ写真をもう一度選んでも反応するように
+      handleTagFiles(files);
+    });
+
+    // 写真をドラッグ＆ドロップしたとき（タグ登録の欄のどこに落としてもOK）
+    const tagSection = document.getElementById("tags");
+    tagSection.addEventListener("dragover", (e) => {
+      e.preventDefault(); // これがないとドロップできない
+      tagSection.classList.add("dragging");
+    });
+    tagSection.addEventListener("dragleave", (e) => {
+      if (!tagSection.contains(e.relatedTarget)) tagSection.classList.remove("dragging");
+    });
+    tagSection.addEventListener("drop", (e) => {
+      e.preventDefault();
+      tagSection.classList.remove("dragging");
+      handleTagFiles([...e.dataTransfer.files]);
+    });
+    // 欄の外に落としても、ブラウザが写真を開いてしまわないようにする
+    window.addEventListener("dragover", (e) => e.preventDefault());
+    window.addEventListener("drop", (e) => e.preventDefault());
+
+    // 写真を受け取ったら → 一覧に並べる → 1枚ずつ番号を読み取る
+    async function handleTagFiles(fileList) {
+      // 画像だけにしぼり、新しい写真が上に来るように並べ替える（lastModified = ファイルの日時）
+      const files = fileList
+        .filter((f) => f.type.startsWith("image/") || /\.(jpe?g|png|heic)$/i.test(f.name))
+        .sort((a, b) => b.lastModified - a.lastModified);
+      if (files.length === 0) return;
+
+      // ① まず全部の写真を並べる（文字が読めるよう長辺1200pxで残す）
+      const entries = [];
+      let failed = 0;
+      for (const file of files) {
+        try {
+          entries.push(createTagRow(await resizeImage(file, 1200), file));
+        } catch (e) {
+          failed++;
+        }
+      }
+      updateTagActions();
+      const failedText = failed ? `（${failed}枚は読み込めませんでした。iPhoneのHEIC形式の写真はJPEGにしてください）` : "";
+
+      // ② 1枚ずつ番号を読み取る
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        tagStatus.textContent = `番号を読み取り中… ${i + 1} / ${entries.length}` +
+          (ocrWorker ? "" : "（初回は準備に少し時間がかかります）") + failedText;
+        entry.status.textContent = "読み取り中…";
+        try {
+          showCandidates(entry, await autoRead(entry.file));
+        } catch (e) {
+          entry.status.textContent = `自動で読み取れませんでした（${e.message}）。写真を見て番号を入力してください。`;
+          entry.status.classList.add("ng");
+        }
+      }
+
+      tagStatus.textContent = entries.length
+        ? "読み取りが終わりました。番号を確認して「まとめてクローゼットに保存」を押してください。" + failedText
+        : "写真を読み込めませんでした。" + failedText;
+    }
+
+    // 「まとめてクローゼットに保存」
+    document.getElementById("tagSaveBtn").addEventListener("click", async () => {
+      const items = loadCloset();
+      let saved = 0;
+      let skipped = 0;
+
+      for (const entry of [...pendingTags]) {
+        const number = entry.numInput.value.trim();
+        if (!/^\d{6}$/.test(number)) {
+          entry.status.textContent = "商品番号を6桁の数字で入力してください。";
+          entry.status.classList.add("ng");
+          skipped++;
+          continue;
+        }
+
+        try {
+          await tagStore("readwrite", (s) => s.put(entry.photo, number)); // タグ写真を保存
+        } catch (e) {
+          entry.status.textContent = "タグ写真を保存できませんでした。";
+          entry.status.classList.add("ng");
+          skipped++;
+          continue;
+        }
+
+        const name = entry.nameInput.value.trim();
+        const color = entry.colorInput.value.trim();
+        const old = items.find((i) => i.number === number);
+        if (old) {
+          // 登録済みの服：入力があったところだけ更新し、服の写真などは残す
+          old.name = name || old.name;
+          old.color = color || old.color;
+          old.hasTag = true;
+        } else {
+          items.unshift({ number, name, color, photo: "", hasTag: true });
+        }
+        removeTagEntry(entry);
+        saved++;
+      }
+
+      if (saveCloset(items)) renderCloset();
+      tagStatus.textContent = `${saved}件をクローゼットに保存しました。` +
+        (skipped ? ` ${skipped}件は番号を確認してから、もう一度押してください。` : "");
+    });
+
+    // 「すべて取り消す」
+    document.getElementById("tagClearBtn").addEventListener("click", () => {
+      [...pendingTags].forEach(removeTagEntry);
+      tagStatus.textContent = "";
+    });
+
+    // ===== 最初に1回だけ実行 =====
+    renderChips();
+    renderCloset();
+  </script>
+</body>
+</html>
