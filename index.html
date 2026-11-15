@@ -330,6 +330,74 @@
       text-align: center;
     }
     .tag-row .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    /* 囲んだ部分の拡大画像（老眼でも番号が読めるよう大きく） */
+    .crop-preview {
+      display: block;
+      width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      background: #000000;
+      margin-bottom: 16px;
+      cursor: zoom-in;
+    }
+
+    /* ===== 大きな見出し＋服のマス ===== */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    @media (min-width: 880px) {
+      .hero { grid-template-columns: 1.1fr 1fr; padding: 56px 0 48px; } /* PCでは左右に並べる */
+    }
+    .hero-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .tile {
+      position: relative;
+      aspect-ratio: 1 / 1;      /* 正方形 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .tile svg { width: 62%; height: 62%; fill: currentColor; transition: transform 0.3s; }
+    .tile:hover svg { transform: scale(1.08) rotate(-4deg); }   /* マウスを乗せると少し動く */
+    .tile img { width: 100%; height: 100%; object-fit: cover; }
+    .tile-label {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      writing-mode: vertical-rl; /* 縦書き */
+      font-weight: 900;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+    }
+    .tile img + .tile-label { color: #ffffff; text-shadow: 0 0 4px rgba(0, 0, 0, 0.6); }
+    .tile-center {
+      flex-direction: column;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+    .tile-center strong {
+      font-size: clamp(1rem, 2.6vw, 1.45rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+    .tile-center .bar { width: 60%; height: 6px; background: var(--red); margin: 10px 0 0; }
+
+    /* ===== フッター ===== */
+    .site-footer {
+      background: var(--panel);
+      text-align: center;
+      padding: 32px 16px;
+      font-size: 0.8rem;
+      color: var(--sub);
+    }
+    .footer-icons { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-bottom: 12px; }
+    .footer-icons svg { width: 32px; height: 32px; fill: var(--sub); }
     .zoom-close {
       cursor: pointer;
       position: absolute;
@@ -357,9 +425,13 @@
   <main>
     <!-- 大きな見出し -->
     <section class="hero">
-      <p class="eyebrow">SEARCH BY ITEM NUMBER</p>
-      <h1>あの一着の着回しを、<br>もう一度。</h1>
-      <p class="lead">販売が終わった服も、商品番号からコーデを探せます。</p>
+      <div class="hero-text">
+        <p class="eyebrow">SEARCH BY ITEM NUMBER</p>
+        <h1>あの一着の着回しを、<br>もう一度。</h1>
+        <p class="lead">販売が終わった服も、商品番号からコーデを探せます。</p>
+      </div>
+      <!-- 服のイラストのマス（JavaScript で作る。保存した服の写真があればそれも並ぶ） -->
+      <div id="heroGrid" class="hero-grid"></div>
     </section>
 
     <!-- 入力エリア -->
@@ -445,6 +517,12 @@
     </section>
   </main>
 
+  <!-- フッター（服のアイコンを並べる） -->
+  <footer class="site-footer">
+    <div id="footerIcons" class="footer-icons"></div>
+    <p>MY CLOSET SEARCH — 自分用の着回し検索アプリ</p>
+  </footer>
+
   <script>
     // ===== 定数 =====
     const STORAGE_KEY = "myClosetItems"; // localStorage に保存するときの名前
@@ -502,6 +580,80 @@
 
     // いま選ばれているキーワード
     const selectedKeywords = new Set();
+
+    // ===== 服のイラスト（自分で描いた簡単な図形。縦横100の枠の中に描いている） =====
+    // bg = マスの色、fg = 服の色
+    const CLOTHES = [
+      { label: "Tシャツ", bg: "#e8601c", fg: "#ffffff",
+        svg: '<path d="M34 16 L44 12 Q50 19 56 12 L66 16 L86 32 L77 44 L68 37 L68 88 L32 88 L32 37 L23 44 L14 32 Z"/>' },
+      { label: "ニット", bg: "#e9e1d4", fg: "#8a5a3c",
+        svg: '<path d="M34 14 L44 11 Q50 17 56 11 L66 14 L82 28 L90 82 L80 84 L70 42 L70 86 L30 86 L30 42 L20 84 L10 82 L18 28 Z"/>' +
+             '<rect x="30" y="79" width="40" height="7" fill="#ffffff" opacity="0.35"/>' },
+      { label: "パンツ", bg: "#26324a", fg: "#cfdde8",
+        svg: '<path d="M30 10 H70 L77 90 H58 L50 38 L42 90 H23 Z"/>' +
+             '<rect x="30" y="10" width="40" height="7" fill="#ffffff" opacity="0.3"/>' },
+      { label: "ソックス", bg: "#2f5d50", fg: "#9fc5b6",
+        svg: '<path d="M40 8 H60 V56 L78 67 Q88 74 82 85 Q77 93 66 88 L42 77 Q36 74 38 66 Z"/>' +
+             '<rect x="40" y="8" width="20" height="6" fill="#ffffff" opacity="0.35"/>' },
+      { label: "ダウン", bg: "#1b1b1b", fg: "#e9e9e9",
+        svg: '<path d="M34 12 L44 9 Q50 15 56 9 L66 12 L84 26 L90 80 L79 82 L70 40 L70 88 L30 88 L30 40 L21 82 L10 80 L16 26 Z"/>' +
+             '<g stroke="#1b1b1b" stroke-width="2.5"><line x1="16" y1="36" x2="84" y2="36"/><line x1="18" y1="52" x2="82" y2="52"/>' +
+             '<line x1="20" y1="68" x2="80" y2="68"/><line x1="50" y1="14" x2="50" y2="88"/></g>' },
+      { label: "スカート", bg: "#cfdde8", fg: "#26324a",
+        svg: '<path d="M36 14 H64 L66 22 L84 86 H16 L34 22 Z"/>' +
+             '<rect x="36" y="14" width="28" height="8" fill="#ffffff" opacity="0.3"/>' },
+      { label: "キャップ", bg: "#e60012", fg: "#ffffff",
+        svg: '<path d="M18 64 Q18 30 50 28 Q82 30 82 64 Z"/><path d="M12 64 H90 Q92 74 80 74 H12 Z"/><circle cx="50" cy="27" r="4"/>' },
+      { label: "ワンピース", bg: "#d9d9d9", fg: "#1b1b1b",
+        svg: '<path d="M40 10 Q50 18 60 10 L66 14 L62 34 L60 40 L80 90 H20 L40 40 L38 34 L34 14 Z"/>' },
+    ];
+
+    function makeSvg(inner) {
+      return `<svg viewBox="0 0 100 100" aria-hidden="true">${inner}</svg>`;
+    }
+
+    // ===== 大きな見出しの横のマスを作る =====
+    // 保存した服の写真があれば、イラストの代わりにその写真を並べる（最大8枚）
+    function renderHero() {
+      const grid = document.getElementById("heroGrid");
+      grid.innerHTML = "";
+      const photos = loadCloset().filter((i) => i.photo).slice(0, CLOTHES.length);
+
+      CLOTHES.forEach((c, index) => {
+        // 真ん中（5番目）にはタイトルのマスを入れる
+        if (index === 4) {
+          const center = document.createElement("div");
+          center.className = "tile tile-center";
+          center.innerHTML = "<strong>MY<br>CLOSET</strong><span class=\"bar\"></span>";
+          grid.appendChild(center);
+        }
+
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.style.background = c.bg;
+        tile.style.color = c.fg;
+
+        const label = document.createElement("span");
+        label.className = "tile-label";
+
+        const mine = photos[index];
+        if (mine) {
+          const img = document.createElement("img");
+          img.src = mine.photo;
+          img.alt = mine.name || mine.number;
+          tile.appendChild(img);
+          label.textContent = mine.name || mine.number;
+        } else {
+          tile.innerHTML = makeSvg(c.svg);
+          label.textContent = c.label;
+        }
+        tile.appendChild(label);
+        grid.appendChild(tile);
+      });
+    }
+
+    // フッターに服のアイコンを並べる
+    document.getElementById("footerIcons").innerHTML = CLOTHES.map((c) => makeSvg(c.svg)).join("");
 
     // ===== 画面の部品を取得 =====
     const itemNumberInput = document.getElementById("itemNumber");
@@ -732,21 +884,109 @@
       return [];
     }
 
-    // 囲んだ範囲だけを大きくして読む
-    async function readArea(file, area) {
+    // ===== 囲んだ範囲を読み取る =====
+
+    // 「大津の方法」：明るさの分布から、白と黒の境目（しきい値）を自動で決める
+    function otsuThreshold(hist, total) {
+      let sum = 0;
+      for (let i = 0; i < 256; i++) sum += i * hist[i];
+      let sumB = 0, wB = 0, best = 0, threshold = 128;
+      for (let t = 0; t < 256; t++) {
+        wB += hist[t];
+        if (!wB) continue;
+        const wF = total - wB;
+        if (!wF) break;
+        sumB += t * hist[t];
+        const between = wB * wF * (sumB / wB - (sum - sumB) / wF) ** 2;
+        if (between > best) { best = between; threshold = t; }
+      }
+      return threshold;
+    }
+
+    // 囲んだ範囲を「切り出す → angle 度まわす → 拡大 → 白地に黒い文字の2色にする → 余白をつける」
+    function prepareCrop(img, box, angle) {
+      const scale = Math.min(4, 1400 / Math.max(box.sw, box.sh));
+      const w = Math.round(box.sw * scale);
+      const h = Math.round(box.sh * scale);
+      const rad = (angle * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(rad));
+      const sin = Math.abs(Math.sin(rad));
+      const pad = 40; // まわりの余白（文字が端にくっついていると読みにくい）
+
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(w * cos + h * sin) + pad * 2;
+      canvas.height = Math.round(w * sin + h * cos) + pad * 2;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(rad);
+      ctx.filter = "grayscale(1)";
+      ctx.drawImage(img, box.sx, box.sy, box.sw, box.sh, -w / 2, -h / 2, w, h);
+
+      // 1ピクセルずつ白か黒に塗り分ける
+      const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const px = image.data;
+      const hist = new Array(256).fill(0);
+      let total = 0;
+      for (let i = 0; i < px.length; i += 4) {
+        if (px[i + 3] > 0) { hist[px[i]]++; total++; } // 余白（透明）は数えない
+      }
+      const threshold = otsuThreshold(hist, total);
+      let dark = 0;
+      for (let t = 0; t <= threshold; t++) dark += hist[t];
+      const invert = dark > total / 2; // 暗いところが多い＝黒いタグ → 反転して白地に黒文字へ
+
+      for (let i = 0; i < px.length; i += 4) {
+        let v = 255; // 余白は白
+        if (px[i + 3] > 0) {
+          const isDark = px[i] <= threshold;
+          v = isDark !== invert ? 0 : 255;
+        }
+        px[i] = px[i + 1] = px[i + 2] = v;
+        px[i + 3] = 255;
+      }
+      ctx.putImageData(image, 0, 0);
+      return canvas;
+    }
+
+    // 目で見る用：囲んだ範囲をそのまま大きくした画像（少しくっきりさせる）
+    function makeCropPreview(img, box) {
+      const scale = Math.min(4, 1000 / box.sw);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(box.sw * scale);
+      canvas.height = Math.round(box.sh * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.filter = "contrast(1.3)";
+      ctx.drawImage(img, box.sx, box.sy, box.sw, box.sh, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.9);
+    }
+
+    // 斜めのタグに対応するため、少しずつ角度を変えて読む
+    const READ_ANGLES = [0, -8, 8, -16, 16, -25, 25, 90, -90];
+
+    // 囲んだ範囲から番号を探す。{ numbers: 候補, preview: 目で見る用の画像 } を返す
+    async function readArea(file, area, onProgress) {
       const img = await loadFileImage(file);
       const box = {
         sx: area.x * img.width,
         sy: area.y * img.height,
         sw: area.w * img.width,
         sh: area.h * img.height,
-        target: 1600,
       };
-      for (const invert of [false, true]) {
-        const numbers = findItemNumbers(await recognize(makeOcrCanvas(img, { ...box, invert }), true));
-        if (numbers.length) return numbers;
+      const preview = makeCropPreview(img, box);
+      // 「222-470922」の形が読めたら確実（囲み方で先頭が欠けて「22-470922」になってもOK）
+      const strong = /(?<!\d)\d{1,3}\s*[-‐－ー−–—~]\s*\d{6}(?!\d)/;
+
+      let fallback = [];
+      for (let i = 0; i < READ_ANGLES.length; i++) {
+        if (onProgress) onProgress(i + 1, READ_ANGLES.length);
+        const text = await recognize(prepareCrop(img, box, READ_ANGLES[i]), true);
+        const numbers = findItemNumbers(text);
+        if (numbers.length && strong.test(text.replace(/(\d)[ \t]+(?=\d)/g, "$1"))) {
+          return { numbers, preview }; // 確実な形が見つかったので、ここで終わり
+        }
+        if (!fallback.length && numbers.length) fallback = numbers; // 念のため取っておく
       }
-      return [];
+      return { numbers: fallback, preview };
     }
 
     // 読み取った文字から商品番号の候補を探す
@@ -762,7 +1002,7 @@
       const found = [];
       const texts = [fixed, fixed.replace(/(\d)[ \t]+(?=\d)/g, "$1")]; // そのまま＋数字の間の空白を詰めたもの
       texts.forEach((t) => {
-        for (const m of t.matchAll(/(?<!\d)\d{3}\s*[-‐－ー−–—~]\s*(\d{6})(?!\d)/g)) found.push(m[1]);
+        for (const m of t.matchAll(/(?<!\d)\d{1,3}\s*[-‐－ー−–—~]\s*(\d{6})(?!\d)/g)) found.push(m[1]);
       });
       // 「-」が読み落とされて「211472014」の9桁になったときは、後ろの6桁
       texts.forEach((t) => {
@@ -933,6 +1173,7 @@
 
     // ===== マイクローゼットを表示する =====
     function renderCloset() {
+      renderHero(); // 見出しのマスも、保存した写真に合わせて更新
       const items = loadCloset();
       closetList.innerHTML = "";
 
@@ -1132,16 +1373,32 @@
       const row = document.createElement("div");
       row.className = "tag-row";
 
+      // 囲んだ部分を大きく見せる画像（最初は隠しておく）
+      const cropPreview = document.createElement("img");
+      cropPreview.className = "crop-preview hidden";
+      cropPreview.alt = "囲んだ部分の拡大";
+      cropPreview.title = "押すとさらに拡大";
+      cropPreview.addEventListener("click", () => showZoom(cropPreview.src));
+
       // 写真を押す → 拡大して「番号を囲んで読み取る」
       const startAreaSelect = () => {
         showZoom(photo, async (area) => {
           entry.status.classList.remove("ng");
           entry.status.textContent = "囲んだ部分を読み取り中…";
           try {
-            const numbers = await readArea(file, area);
-            showCandidates(entry, numbers);
-            if (!numbers.length) {
-              entry.status.textContent = "読み取れませんでした。番号だけをもう少し大きめに囲むか、手で入力してください。";
+            const { numbers, preview } = await readArea(file, area, (n, total) => {
+              entry.status.textContent = `囲んだ部分を読み取り中…（角度を変えて試しています ${n} / ${total}）`;
+            });
+            cropPreview.src = preview;
+            cropPreview.classList.remove("hidden");
+            if (numbers.length) {
+              showCandidates(entry, numbers);
+            } else {
+              entry.candidates.innerHTML = "";
+              entry.numInput.value = ""; // 間違った番号が残らないように消す
+              entry.status.textContent = "自動では読み取れませんでした。下の拡大画像を見て、番号を入力してください（画像を押すとさらに拡大）。";
+              entry.status.classList.add("ng");
+              entry.numInput.focus();
             }
           } catch (e) {
             entry.status.textContent = `読み取りに失敗しました（${e.message}）。手で入力してください。`;
@@ -1193,7 +1450,7 @@
       rowBtns.className = "row-btns";
       rowBtns.append(areaBtn, removeBtn);
 
-      fields.append(status, makeField("商品番号（6桁）", numInput), candidates, nameColorRow, rowBtns);
+      fields.append(status, cropPreview, makeField("商品番号（6桁）", numInput), candidates, nameColorRow, rowBtns);
       row.append(img, fields);
       tagList.appendChild(row);
 
